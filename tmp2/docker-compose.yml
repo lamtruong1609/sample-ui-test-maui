@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  android-emulator:
+    container_name: emulator
+    image: halimqarroum/docker-android:api-33
+    privileged: true
+    devices:
+      - /dev/kvm
+    network_mode: host
+    shm_size: 2g
+    environment:
+      - AVD_NAME=android33
+    healthcheck:
+      test: ["CMD", "adb", "shell", "getprop", "sys.boot_completed"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 300s
+
+  appium:
+    container_name: appium
+    image: appium/appium
+    network_mode: host
+    depends_on:
+      - android-emulator
+
+  app-builder:
+    container_name: app-builder
+    build:
+      context: .
+      dockerfile: app_builder.dockerfile
+    network_mode: host
+    depends_on:
+      android-emulator:
+        condition: service_healthy
+      appium:
+        condition: service_started
+    stdin_open: true
+    tty: true
+
+  test-runner:
+    container_name: test-runner
+    build:
+      context: .
+      dockerfile: test_runner.dockerfile
+    network_mode: host
+    depends_on:
+      android-emulator:
+        condition: service_healthy
+      appium:
+        condition: service_started
+    volumes:
+      - ./output:/home/app/output
+    environment:
+      - TERM=xterm-256color
+      - PACKAGE_NAME=com.companyname.basicappiumsample
+    stdin_open: true
+    tty: true
+
