@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent { label 'amazon-linux' }
 
     environment {
         IMAGE_NAME = "maui-test-runner"
