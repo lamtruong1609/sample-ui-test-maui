@@ -2,7 +2,7 @@
 
 JENKINS_URL="http://localhost:8080"
 USER="admin"
-API_TOKEN="11a8b563d8aa422a571a458fe25bdfe1fd"
+API_TOKEN="aaaa"
 
 # Function to URL-encode strings (bash only)
 urlencode() {

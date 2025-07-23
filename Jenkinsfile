@@ -11,7 +11,8 @@ pipeline {
             steps {
                 script {
                     // Build the Docker image for the test runner
-                    sh 'docker build -f tmp2/test_runner.dockerfile -t ${IMAGE_NAME} .'
+                    sh 'cd tmp2'
+                    sh 'docker build -f test_runner.dockerfile -t ${IMAGE_NAME} .'
                 }
             }
         }
