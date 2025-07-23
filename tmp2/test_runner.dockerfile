@@ -14,12 +14,12 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 WORKDIR /home/app
 
-COPY BasicAppiumNunitSample/ /home/app
+COPY tmp2/BasicAppiumNunitSample/ /home/app
 
 # COPY global.json /home/app/
-COPY entrypoint_test_runner.sh /home/app/entrypoint.sh
+COPY tmp2/entrypoint_nonui_test_runner.sh /home/app/entrypoint.sh
 
 # Make sure the output directory exists
 RUN mkdir -p /home/app/output
-
+RUN chmod +x /home/app/entrypoint.sh
 ENTRYPOINT ["/home/app/entrypoint.sh"]

@@ -1,4 +1,4 @@
- pipeline {
+pipeline {
     agent any
 
     environment {
@@ -34,8 +34,8 @@
     }
     post {
         always {
-            // Clean up Docker images if needed
-            // sh 'docker rmi ${IMAGE_NAME} || true'
+            // Clean up Docker image after pipeline
+            sh 'docker rmi ${IMAGE_NAME} || true'
         }
     }
-}
+} 
