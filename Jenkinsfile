@@ -11,31 +11,45 @@ pipeline {
             steps {
                 script {
                     // Build the Docker image for the test runner
-                    sh ' docker build -f tmp2/test_runner.dockerfile -t ${IMAGE_NAME} .'
+                    sh 'docker build -f tmp2/test_runner.dockerfile -t ${IMAGE_NAME} tmp2'
                 }
             }
         }
+
         stage('Run Tests in Docker') {
             steps {
                 script {
                     // Create output directory for test results
-                    sh 'mkdir -p ${OUTPUT_DIR}'
-                    // Run the tests in the container and save results
-                    sh 'docker run --rm -v $PWD/${OUTPUT_DIR}:/home/app/output ${IMAGE_NAME}'
+                    sh "mkdir -p ${OUTPUT_DIR}"
+                    // Run tests in the container
+                    sh "docker run --rm -v \$PWD/${OUTPUT_DIR}:/home/app/output ${IMAGE_NAME}"
                 }
             }
         }
+
+        stage('Convert TRX to JUnit XML') {
+            steps {
+                script {
+                    // Install trx2junit tool if not already installed
+                    sh 'dotnet tool install --global trx2junit || true'
+                    // Ensure dotnet global tools path is in PATH
+                    sh 'export PATH="$PATH:$HOME/.dotnet/tools" && trx2junit ${OUTPUT_DIR}/*.trx'
+                }
+            }
+        }
+
         stage('Publish Test Results') {
             steps {
-                // Publish TRX results if generated
-                junit allowEmptyResults: true, testResults: "${OUTPUT_DIR}/*.trx"
+                // Publish converted JUnit XML results
+                junit allowEmptyResults: true, testResults: "${OUTPUT_DIR}/*.xml"
             }
         }
     }
+
     post {
         always {
             // Clean up Docker image after pipeline
             sh 'docker rmi ${IMAGE_NAME} || true'
         }
     }
-} 
+}
