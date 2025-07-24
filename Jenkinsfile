@@ -25,22 +25,13 @@ pipeline {
                 }
             }
         }
-        stage('Convert TRX to JUnit XML') {
-            steps {
-                script {
-                    // Install trx2junit tool if not already installed
-                    sh 'dotnet tool install --global trx2junit || true'
-                    // Ensure dotnet global tools path is in PATH
-                    sh 'export PATH="$PATH:$HOME/.dotnet/tools" && trx2junit ${OUTPUT_DIR}/*.trx'
-                }
-            }
-        }
         stage('Publish Test Results') {
             steps {
-                // Publish TRX results if generated
-                junit allowEmptyResults: true, testResults: "${OUTPUT_DIR}/*.trx"
+                step([$class: 'MSTestPublisher', testResultsFile: "${OUTPUT_DIR}/*.trx", failOnError: false])
             }
         }
+    }
+
     }
     post {
         always {
@@ -48,4 +39,3 @@ pipeline {
             sh 'docker rmi ${IMAGE_NAME} || true'
         }
     }
-} 
