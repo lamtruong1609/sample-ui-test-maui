@@ -27,11 +27,10 @@ pipeline {
         }
         stage('Publish Test Results') {
             steps {
-                step([$class: 'MSTestPublisher', testResultsFile: "${OUTPUT_DIR}/*.trx", failOnError: false])
+                // Publish TRX results if generated
+                junit allowEmptyResults: true, testResults: "${OUTPUT_DIR}/*.trx"
             }
         }
-    }
-
     }
     post {
         always {
@@ -39,3 +38,4 @@ pipeline {
             sh 'docker rmi ${IMAGE_NAME} || true'
         }
     }
+} 
