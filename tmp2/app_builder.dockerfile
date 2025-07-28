@@ -24,11 +24,11 @@ RUN chmod +x ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager
 
 # Debug: Print Java version and sdkmanager version
 RUN java -version && \
-    bash -c "yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --version"
+    ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --version
 
 # Accept licenses and install SDK components
 RUN yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses && \
-    ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --verbose \
+    ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager \
         "platform-tools" \
         "platforms;android-33" \
         "build-tools;33.0.2" \
