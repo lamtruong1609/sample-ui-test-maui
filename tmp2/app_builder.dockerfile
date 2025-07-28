@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV ANDROID_SDK_ROOT=/opt/android-sdk
 ENV ANDROID_HOME=$ANDROID_SDK_ROOT
 ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
 # Download and set up Android command line tools
 RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
@@ -19,9 +20,12 @@ RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
 # Set the correct path for sdkmanager
 ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
 
-# Accept licenses and install required SDK components
-RUN echo "y" | sdkmanager --licenses && \
-    sdkmanager \
+# Debug: Print Java and sdkmanager version
+RUN java -version && sdkmanager --version
+
+# Accept licenses and install required SDK components (with verbose output)
+RUN echo "y" | sdkmanager --licenses --verbose && \
+    sdkmanager --verbose \
         "platform-tools" \
         "platforms;android-33" \
         "build-tools;33.0.2" \
