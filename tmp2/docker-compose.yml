@@ -3,14 +3,15 @@ version: '3.8'
 services:
   android-emulator:
     container_name: emulator
-    image: halimqarroum/docker-android:api-33
-    privileged: true
-    devices:
-      - /dev/kvm
+    image: cndaqiang/docker-android-emulator:api-33arm64v8a
     network_mode: host
     shm_size: 2g
+    privileged: false  # KVM is not used in QEMU ARM64
     environment:
-      - AVD_NAME=android33
+      - DEVICE=Pixel
+      - SKIN=1200x1920
+      - EMULATOR_PARAMS=-noaudio -no-boot-anim -gpu swiftshader_indirect
+      - VERBOSE=true
     healthcheck:
       test: ["CMD", "adb", "shell", "getprop", "sys.boot_completed"]
       interval: 30s

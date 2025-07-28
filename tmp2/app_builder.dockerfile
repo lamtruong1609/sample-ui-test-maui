@@ -24,7 +24,7 @@ RUN yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --licenses && \
         "platforms;android-35" \
         "build-tools;35.0.0" \
         "emulator" \
-        "system-images;android-35;google_apis;x86_64"
+        "system-images;android-35;google_apis;arm64-v8a"
 
 # # Install .NET MAUI Android workload
 RUN dotnet workload install maui-android
