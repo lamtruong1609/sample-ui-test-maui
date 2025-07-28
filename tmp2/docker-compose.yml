@@ -3,14 +3,14 @@ version: '3.8'
 services:
   android-emulator:
     container_name: emulator
-    image: halimqarroum/docker-android:api-33
+    image: cndaqiang/docker-android-emulator:api-33arm64v8a
     privileged: true
-    devices:
-      - /dev/kvm
-    network_mode: host
     shm_size: 2g
     environment:
       - AVD_NAME=android33
+    ports:
+      - "5554:5554"  # Emulator console
+      - "5555:5555"  # ADB
     healthcheck:
       test: ["CMD", "adb", "shell", "getprop", "sys.boot_completed"]
       interval: 30s
@@ -57,4 +57,3 @@ services:
       - PACKAGE_NAME=com.companyname.basicappiumsample
     stdin_open: true
     tty: true
-
