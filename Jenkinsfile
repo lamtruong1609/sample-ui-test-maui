@@ -2,26 +2,34 @@ pipeline {
     agent { label 'amazon-linux' }
 
     environment {
-        IMAGE_NAME = "maui-test-runner"
-        OUTPUT_DIR = "test-results"
+        OUTPUT_DIR = "tmp2/output"
+        COMPOSE_FILE = "tmp2/docker-compose.yml"
     }
 
     stages {
-        stage('Build Docker Image') {
+        stage('Start Services') {
             steps {
                 script {
-                    // Build the Docker image for the test runner
-                    sh ' docker build -f tmp2/test_runner.dockerfile -t ${IMAGE_NAME} .'
+                    // Start all services in the background
+                    sh "docker-compose -f ${COMPOSE_FILE} up -d"
                 }
             }
         }
-        stage('Run Tests in Docker') {
+        stage('Wait for Emulator & Appium') {
             steps {
                 script {
-                    // Create output directory for test results
-                    sh 'mkdir -p ${OUTPUT_DIR}'
-                    // Run the tests in the container and save results
-                    sh 'docker run --rm -v $PWD/${OUTPUT_DIR}:/home/app/output ${IMAGE_NAME}'
+                    // Wait for emulator healthcheck (adjust as needed)
+                    sh "docker-compose -f ${COMPOSE_FILE} ps"
+                    // Optionally, add a sleep or a custom wait script here
+                    sh "sleep 120"
+                }
+            }
+        }
+        stage('Run Tests') {
+            steps {
+                script {
+                    // Run the test-runner service (it will run and exit)
+                    sh "docker-compose -f ${COMPOSE_FILE} run --rm test-runner"
                 }
             }
         }
@@ -34,8 +42,8 @@ pipeline {
     }
     post {
         always {
-            // Clean up Docker image after pipeline
-            sh 'docker rmi ${IMAGE_NAME} || true'
+            // Tear down all services
+            sh "docker-compose -f ${COMPOSE_FILE} down"
         }
     }
 } 
