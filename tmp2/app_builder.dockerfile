@@ -1,18 +1,17 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0.203 AS builder
 
+# Install Java and other dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    unzip wget openjdk-17-jdk \
+    unzip wget openjdk-17-jdk lib32stdc++6 lib32z1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Set environment variables
 ENV ANDROID_SDK_ROOT=/opt/android-sdk
 ENV ANDROID_HOME=$ANDROID_SDK_ROOT
-ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${JAVA_HOME}/bin:${PATH}"
 
-# Debug: Check system architecture
-RUN uname -m && arch
-
-# Download and set up Android command line tools
+# Create SDK directory and download command line tools
 RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
     cd ${ANDROID_SDK_ROOT}/cmdline-tools && \
     wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip && \
@@ -20,35 +19,32 @@ RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
     mv cmdline-tools latest && \
     rm tools.zip
 
-# Set the correct path for sdkmanager
-ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
+# Ensure sdkmanager is executable
+RUN chmod +x ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager
 
-# Debug: List sdkmanager location and permissions
-RUN ls -l ${ANDROID_HOME}/cmdline-tools/latest/bin && which sdkmanager || true && ls -l $(which sdkmanager) || true
+# Debug: Print Java version and sdkmanager version
+RUN java -version && \
+    bash -c "yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --version"
 
-# Debug: Check sdkmanager binary dependencies
-RUN ldd ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager || true
-
-# Debug: Print Java and sdkmanager version using full path
-RUN java -version && ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --version
-
-# Accept licenses and install required SDK components (with verbose output)
-RUN echo "y" | sdkmanager --licenses --verbose && \
-    sdkmanager --verbose \
+# Accept licenses and install SDK components
+RUN yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses && \
+    ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --verbose \
         "platform-tools" \
         "platforms;android-33" \
         "build-tools;33.0.2" \
         "emulator" \
         "system-images;android-33;google_apis;arm64-v8a"
 
-# .NET MAUI workload
+# Install .NET MAUI workload
 RUN dotnet workload install maui-android
 
-# App copy and build
+# Build the application
 WORKDIR /home/app
 COPY BasicAppiumNunitSample /home/app/BasicAppiumNunitSample
 WORKDIR /home/app/BasicAppiumNunitSample
 RUN dotnet publish BasicAppiumNunitSample.csproj -f net9.0-android -c Release -o ./publish
 
+# Entry point
 COPY entrypoint_app_builder.sh /home/app/entrypoint.sh
+RUN chmod +x /home/app/entrypoint.sh
 ENTRYPOINT ["/home/app/entrypoint.sh"]
