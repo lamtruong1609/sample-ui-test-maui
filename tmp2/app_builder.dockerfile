@@ -2,7 +2,9 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0.203 AS builder
 
 # Install Java and other dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    unzip wget openjdk-17-jdk lib32stdc++6 lib32z1 \
+    unzip \
+    wget \
+    openjdk-17-jdk \
     && rm -rf /var/lib/apt/lists/*
 
 # Set environment variables
@@ -37,6 +39,9 @@ RUN yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses && \
 
 # Install .NET MAUI workload
 RUN dotnet workload install maui-android
+
+# Install Appium (optional, if running Appium server in the container)
+RUN npm install -g appium
 
 # Build the application
 WORKDIR /home/app
