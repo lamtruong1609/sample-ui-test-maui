@@ -17,13 +17,13 @@ RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
     rm tools.zip
 
 # Accept licenses and install required SDK components
-RUN yes | sdkmanager --licenses && \
-    sdkmanager \
+RUN yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses && \
+    ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager \
         "platform-tools" \
-        "platforms;android-35" \
-        "build-tools;35.0.0" \
+        "platforms;android-33" \
+        "build-tools;33.0.2" \
         "emulator" \
-        "system-images;android-35;google_apis;arm64-v8a"
+        "system-images;android-33;google_apis;arm64-v8a"
 
 # .NET MAUI workload
 RUN dotnet workload install maui-android
