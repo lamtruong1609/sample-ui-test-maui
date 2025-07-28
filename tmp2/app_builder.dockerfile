@@ -3,8 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0.203 AS builder
 # Install required packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip wget openjdk-17-jdk \
-    libc6-dev-i386 libgcc1:i386 libncurses5:i386 \
-    libstdc++6:i386 zlib1g:i386 \
+    libc6-dev libgcc1 libncurses5 libstdc++6 zlib1g \
     && rm -rf /var/lib/apt/lists/*
 
 # Set environment paths for Android SDK
