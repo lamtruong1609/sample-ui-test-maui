@@ -3,28 +3,38 @@ version: '3.8'
 services:
   android-emulator:
     container_name: emulator
-    image: cndaqiang/docker-android-emulator:api-33arm64v8a
+    image: budtmo/docker-android:emulator_12.0-arm64-v8a
     network_mode: host
     shm_size: 2g
-    privileged: false  # KVM is not used in QEMU ARM64
+    privileged: true  # Required for ARM emulation
     environment:
-      - DEVICE=Pixel
-      - SKIN=1200x1920
-      - EMULATOR_PARAMS=-noaudio -no-boot-anim -gpu swiftshader_indirect
-      - VERBOSE=true
+      - DEVICE=Nexus 5
+      - API_LEVEL=31
+      - ARCH=arm64-v8a
+      - EMULATOR_ARGS=-no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+      - PROXY=true  # Helps with network access inside container
+      - APPIUM_HOST=127.0.0.1
+      - CONNECT_TO_GRID=false
+    volumes:
+      - ./emulator_data:/root/android_emulator
     healthcheck:
       test: ["CMD", "adb", "shell", "getprop", "sys.boot_completed"]
       interval: 30s
       timeout: 10s
-      retries: 10
-      start_period: 300s
+      retries: 15  # ARM emulator might take longer to boot
+      start_period: 600s  # ARM emulator needs more time to start
 
   appium:
     container_name: appium
     image: appium/appium
     network_mode: host
     depends_on:
-      - android-emulator
+      android-emulator:
+        condition: service_healthy
+    environment:
+      - APPIUM_RELAXED_SECURITY=1
+      - ANDROID_DEVICE_READY_TIMEOUT=600  # ARM devices take longer
+    command: appium --relaxed-security --log-timestamp --local-timezone
 
   app-builder:
     container_name: app-builder
@@ -35,8 +45,10 @@ services:
     depends_on:
       android-emulator:
         condition: service_healthy
-      appium:
-        condition: service_started
+    environment:
+      - ANDROID_ARCH=arm64-v8a
+    volumes:
+      - ./build_output:/home/app/publish
     stdin_open: true
     tty: true
 
@@ -53,9 +65,10 @@ services:
         condition: service_started
     volumes:
       - ./output:/home/app/output
+      - ./build_output:/home/app/publish
     environment:
       - TERM=xterm-256color
       - PACKAGE_NAME=com.companyname.basicappiumsample
+      - ANDROID_ARCH=arm64-v8a
     stdin_open: true
     tty: true
-
