@@ -20,8 +20,11 @@ RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
 # Set the correct path for sdkmanager
 ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
 
-# Debug: Print Java and sdkmanager version
-RUN java -version && sdkmanager --version
+# Debug: List sdkmanager location and permissions
+RUN ls -l ${ANDROID_HOME}/cmdline-tools/latest/bin && which sdkmanager || true && ls -l $(which sdkmanager) || true
+
+# Debug: Print Java and sdkmanager version using full path
+RUN java -version && ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --version
 
 # Accept licenses and install required SDK components (with verbose output)
 RUN echo "y" | sdkmanager --licenses --verbose && \
