@@ -9,6 +9,9 @@ ENV ANDROID_HOME=$ANDROID_SDK_ROOT
 ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
+# Debug: Check system architecture
+RUN uname -m && arch
+
 # Download and set up Android command line tools
 RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
     cd ${ANDROID_SDK_ROOT}/cmdline-tools && \
@@ -22,6 +25,9 @@ ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tool
 
 # Debug: List sdkmanager location and permissions
 RUN ls -l ${ANDROID_HOME}/cmdline-tools/latest/bin && which sdkmanager || true && ls -l $(which sdkmanager) || true
+
+# Debug: Check sdkmanager binary dependencies
+RUN ldd ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager || true
 
 # Debug: Print Java and sdkmanager version using full path
 RUN java -version && ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --version
