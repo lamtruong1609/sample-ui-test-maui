@@ -7,38 +7,35 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Set environment paths for Android SDK
 ENV ANDROID_SDK_ROOT=/opt/android-sdk
-ENV ANDROID_HOME=$ANDROID_SDK_ROOT
-ENV PATH="$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/cmdline-tools/bin:$ANDROID_SDK_ROOT/platform-tools"
+ENV ANDROID_HOME=${ANDROID_SDK_ROOT}
+ENV PATH="${PATH}:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools"
 
 # Download and install Android command line tools
-RUN mkdir -p $ANDROID_SDK_ROOT/cmdline-tools && \
-    cd $ANDROID_SDK_ROOT/cmdline-tools && \
+RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    cd ${ANDROID_SDK_ROOT}/cmdline-tools && \
     wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip && \
     unzip tools.zip -d latest && \
     rm tools.zip
 
-# Accept Android licenses and install SDK packages
-ENV ANDROID_SDK_ROOT=/opt/android-sdk
-ENV PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
+# Accept Android licenses and install SDK packages (including arm64-v8a image)
+RUN yes | sdkmanager --licenses --sdk_root=${ANDROID_SDK_ROOT} || true && \
+    yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} \
+        "platform-tools" \
+        "platforms;android-35" \
+        "build-tools;35.0.0" \
+        "emulator" \
+        "system-images;android-35;google_apis;arm64-v8a"
 
-# Install SDK manager and dependencies before using it
-RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
-    cd ${ANDROID_SDK_ROOT}/cmdline-tools && \
-    wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip && \
-    unzip tools.zip && \
-    rm tools.zip && \
-    mv cmdline-tools latest
-
-
-# # Install .NET MAUI Android workload
+# Install .NET MAUI Android workload
 RUN dotnet workload install maui-android
 
+# Set working directory
 WORKDIR /home/app
-# # Optional: copy your source code into the image (you can also use bind mounts)
 
+# Copy project files
 COPY BasicAppiumNunitSample/MauiApp /home/app
 RUN dotnet publish BasicAppiumNunitSample.csproj -f net9.0-android -c Release -o ./publish 
 
-
+# Copy entrypoint script
 COPY entrypoint_app_builder.sh /home/app/entrypoint.sh
 ENTRYPOINT ["/home/app/entrypoint.sh"]
