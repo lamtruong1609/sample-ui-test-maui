@@ -21,14 +21,27 @@ RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
 # Ensure sdkmanager is executable
 RUN chmod +x ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager
 
-# Accept Android licenses and install SDK packages (including arm64-v8a image)
-RUN yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses --sdk_root=${ANDROID_SDK_ROOT} && \
-    yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} \
+# Debug: Check Java version and sdkmanager
+RUN java -version && \
+    ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --version && \
+    ls -l ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/
+
+# Accept Android licenses
+RUN yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses --sdk_root=${ANDROID_SDK_ROOT} || true
+
+# Install SDK packages with fallback to Android 34 if Android 35 is unavailable
+RUN yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} \
         "platform-tools" \
         "platforms;android-35" \
         "build-tools;35.0.0" \
         "emulator" \
-        "system-images;android-35;google_apis;arm64-v8a"
+        "system-images;android-35;google_apis;arm64-v8a" || \
+    yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} \
+        "platform-tools" \
+        "platforms;android-34" \
+        "build-tools;34.0.0" \
+        "emulator" \
+        "system-images;android-34;google_apis;arm64-v8a"
 
 # Install .NET MAUI Android workload
 RUN dotnet workload install maui-android
