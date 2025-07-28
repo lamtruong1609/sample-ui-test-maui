@@ -23,15 +23,26 @@ RUN mkdir -p $ANDROID_SDK_ROOT/cmdline-tools && \
 RUN ls -la $ANDROID_SDK_ROOT/cmdline-tools/latest/bin && \
     $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --list || true
 
-# Accept licenses and install packages (using direct path)
-RUN yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses && \
-    $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
-        "platform-tools" \
-        "platforms;android-33" \
-        "build-tools;33.0.2" \
-        "emulator" \
-        "system-images;android-33;google_apis;arm64-v8a" && \
-    $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --update
+# Accept licenses
+RUN yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || (cat $HOME/.android/adb.log || true; exit 1)
+
+# Install platform tools
+RUN $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platform-tools" || (cat $HOME/.android/adb.log || true; exit 1)
+
+# Install platforms
+RUN $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" || (cat $HOME/.android/adb.log || true; exit 1)
+
+# Install build tools
+RUN $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" || (cat $HOME/.android/adb.log || true; exit 1)
+
+# Install emulator
+RUN $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "emulator" || (cat $HOME/.android/adb.log || true; exit 1)
+
+# Install system image
+RUN $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "system-images;android-33;google_apis;arm64-v8a" || (cat $HOME/.android/adb.log || true; exit 1)
+
+# Update SDK
+RUN $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --update || (cat $HOME/.android/adb.log || true; exit 1)
 
 # Install .NET MAUI Android workload
 RUN dotnet workload install maui-android && \
