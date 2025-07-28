@@ -24,9 +24,11 @@ RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
 # Ensure sdkmanager is executable
 RUN chmod +x ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager
 
-# Debug: Print Java version and sdkmanager version
-RUN java -version && \
-    ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --version
+# Debug: Verify Java and sdkmanager setup
+RUN echo "Checking Java installation..." && \
+    java -version || { echo "Java installation failed"; exit 1; } && \
+    echo "Checking sdkmanager installation..." && \
+    ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --version || { echo "sdkmanager failed"; exit 1; }
 
 # Accept licenses and install SDK components
 RUN yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses && \
@@ -40,8 +42,10 @@ RUN yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses && \
 # Install .NET MAUI workload
 RUN dotnet workload install maui-android
 
-# Install Appium (optional, if running Appium server in the container)
-RUN npm install -g appium
+# Install Appium
+RUN apt-get update && apt-get install -y --no-install-recommends nodejs npm && \
+    npm install -g appium && \
+    rm -rf /var/lib/apt/lists/*
 
 # Build the application
 WORKDIR /home/app
