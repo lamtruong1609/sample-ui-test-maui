@@ -11,7 +11,7 @@ pipeline {
             steps {
                 script {
                     // Start all services in the background
-                    sh "docker-compose -f ${COMPOSE_FILE} up -d"
+                    sh "docker compose -f ${COMPOSE_FILE} up -d"
                 }
             }
         }
@@ -19,9 +19,9 @@ pipeline {
             steps {
                 script {
                     // Show status of all containers
-                    sh "docker-compose -f ${COMPOSE_FILE} ps -a"
+                    sh "docker compose -f ${COMPOSE_FILE} ps -a"
                     // Show logs from the emulator container
-                    sh "docker-compose -f ${COMPOSE_FILE} logs --tail=100 android-emulator || true"
+                    sh "docker compose -f ${COMPOSE_FILE} logs --tail=100 android-emulator || true"
                     // Show Docker system info (for KVM, etc.)
                     sh "docker info || true"
                     // Show KVM device presence
@@ -33,7 +33,7 @@ pipeline {
             steps {
                 script {
                     // Wait for emulator healthcheck (adjust as needed)
-                    sh "docker-compose -f ${COMPOSE_FILE} ps"
+                    sh "docker compose -f ${COMPOSE_FILE} ps"
                     // Optionally, add a sleep or a custom wait script here
                     sh "sleep 120"
                 }
@@ -43,7 +43,7 @@ pipeline {
             steps {
                 script {
                     // Run the test-runner service (it will run and exit)
-                    sh "docker-compose -f ${COMPOSE_FILE} run --rm test-runner"
+                    sh "docker compose -f ${COMPOSE_FILE} run --rm test-runner"
                 }
             }
         }
@@ -57,7 +57,7 @@ pipeline {
     post {
         always {
             // Tear down all services
-            sh "docker-compose -f ${COMPOSE_FILE} down"
+            sh "docker compose -f ${COMPOSE_FILE} down"
         }
     }
 } 
