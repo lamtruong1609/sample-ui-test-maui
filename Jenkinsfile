@@ -10,8 +10,8 @@ pipeline {
         stage('Start Services') {
             steps {
                 script {
+                    echo "🚀 Starting Docker services..."
                     try {
-                        echo "🚀 Starting Docker services..."
                         sh "docker-compose -f ${COMPOSE_FILE} up -d"
                     } catch (err) {
                         echo "❌ Failed to start Docker services. Fetching logs..."
@@ -28,14 +28,15 @@ pipeline {
                     echo "⏳ Waiting for Emulator & Appium to be ready..."
                     sh "docker-compose -f ${COMPOSE_FILE} ps -a"
 
-                    // Optional: Wait loop to poll for emulator health status
-                    def retries = 10
+                    def retries = 12
                     def healthy = false
+
                     for (int i = 0; i < retries; i++) {
                         def status = sh(
                             script: "docker inspect -f '{{.State.Health.Status}}' emulator || echo 'unavailable'",
                             returnStdout: true
                         ).trim()
+
                         echo "➡️ Emulator health status: ${status}"
                         if (status == "healthy") {
                             healthy = true
@@ -45,7 +46,7 @@ pipeline {
                     }
 
                     if (!healthy) {
-                        echo "❌ Emulator is not healthy. Fetching logs..."
+                        echo "❌ Emulator is not healthy after waiting. Fetching logs..."
                         sh "docker-compose -f ${COMPOSE_FILE} logs --tail=100 android-emulator"
                         error("Emulator did not become healthy in time.")
                     }
@@ -57,7 +58,13 @@ pipeline {
             steps {
                 script {
                     echo "🧪 Running test-runner..."
-                    sh "docker-compose -f ${COMPOSE_FILE} run --rm test-runner"
+                    try {
+                        sh "docker-compose -f ${COMPOSE_FILE} run --rm test-runner"
+                    } catch (err) {
+                        echo "❌ Test runner failed. Collecting logs..."
+                        sh "docker-compose -f ${COMPOSE_FILE} logs --tail=100 test-runner"
+                        error("Test Runner failed: ${err}")
+                    }
                 }
             }
         }
@@ -73,7 +80,7 @@ pipeline {
     post {
         always {
             echo "🧹 Cleaning up Docker services..."
-            sh "docker-compose -f ${COMPOSE_FILE} down"
+            sh "docker-compose -f ${COMPOSE_FILE} down --volumes"
         }
     }
 }
