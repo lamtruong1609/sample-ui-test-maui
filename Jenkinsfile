@@ -10,54 +10,70 @@ pipeline {
         stage('Start Services') {
             steps {
                 script {
-                    // Start all services in the background
-                    sh "docker compose -f ${COMPOSE_FILE} up -d"
+                    try {
+                        echo "🚀 Starting Docker services..."
+                        sh "docker-compose -f ${COMPOSE_FILE} up -d"
+                    } catch (err) {
+                        echo "❌ Failed to start Docker services. Fetching logs..."
+                        sh "docker-compose -f ${COMPOSE_FILE} logs --tail=100"
+                        error("Start Services stage failed: ${err}")
+                    }
                 }
             }
         }
-        stage('Debug Emulator Container') {
-            steps {
-                script {
-                    // Show status of all containers
-                    sh "docker compose -f ${COMPOSE_FILE} ps -a"
-                    // Show logs from the emulator container
-                    sh "docker compose -f ${COMPOSE_FILE} logs --tail=100 android-emulator || true"
-                    // Show Docker system info (for KVM, etc.)
-                    sh "docker info || true"
-                    // Show KVM device presence
-                    sh "ls -l /dev/kvm || true"
-                }
-            }
-        }
+
         stage('Wait for Emulator & Appium') {
             steps {
                 script {
-                    // Wait for emulator healthcheck (adjust as needed)
-                    sh "docker compose -f ${COMPOSE_FILE} ps"
-                    // Optionally, add a sleep or a custom wait script here
-                    sh "sleep 120"
+                    echo "⏳ Waiting for Emulator & Appium to be ready..."
+                    sh "docker-compose -f ${COMPOSE_FILE} ps -a"
+
+                    // Optional: Wait loop to poll for emulator health status
+                    def retries = 10
+                    def healthy = false
+                    for (int i = 0; i < retries; i++) {
+                        def status = sh(
+                            script: "docker inspect -f '{{.State.Health.Status}}' emulator || echo 'unavailable'",
+                            returnStdout: true
+                        ).trim()
+                        echo "➡️ Emulator health status: ${status}"
+                        if (status == "healthy") {
+                            healthy = true
+                            break
+                        }
+                        sleep 30
+                    }
+
+                    if (!healthy) {
+                        echo "❌ Emulator is not healthy. Fetching logs..."
+                        sh "docker-compose -f ${COMPOSE_FILE} logs --tail=100 android-emulator"
+                        error("Emulator did not become healthy in time.")
+                    }
                 }
             }
         }
+
         stage('Run Tests') {
             steps {
                 script {
-                    // Run the test-runner service (it will run and exit)
-                    sh "docker compose -f ${COMPOSE_FILE} run --rm test-runner"
+                    echo "🧪 Running test-runner..."
+                    sh "docker-compose -f ${COMPOSE_FILE} run --rm test-runner"
                 }
             }
         }
+
         stage('Publish Test Results') {
             steps {
-                // Publish TRX results if generated
+                echo "📤 Publishing test results..."
                 junit allowEmptyResults: true, testResults: "${OUTPUT_DIR}/*.trx"
             }
         }
     }
+
     post {
         always {
-            // Tear down all services
-            sh "docker compose -f ${COMPOSE_FILE} down"
+            echo "🧹 Cleaning up Docker services..."
+            sh "docker-compose -f ${COMPOSE_FILE} down"
         }
     }
-} 
+}

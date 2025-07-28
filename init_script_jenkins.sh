@@ -12,9 +12,9 @@ sudo systemctl enable docker
 sudo systemctl start docker
 sudo usermod -aG docker ec2-user  # or use $(whoami) if not EC2
 
-# Install Docker Compose V2 (as a plugin)
-sudo dnf install -y docker-compose-plugin
-# Note: Use 'docker compose' (with a space) instead of 'docker-compose'
+# Install Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
 
 # Create and enable 2GB swap file
 sudo fallocate -l 2G /swapfile
