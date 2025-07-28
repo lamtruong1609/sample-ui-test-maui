@@ -14,12 +14,16 @@ ENV PATH="${PATH}:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROO
 RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
     cd ${ANDROID_SDK_ROOT}/cmdline-tools && \
     wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip && \
-    unzip tools.zip -d latest && \
+    unzip tools.zip -d temp && \
+    mv temp/cmdline-tools latest && \
     rm tools.zip
 
+# Ensure sdkmanager is executable
+RUN chmod +x ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager
+
 # Accept Android licenses and install SDK packages (including arm64-v8a image)
-RUN yes | sdkmanager --licenses --sdk_root=${ANDROID_SDK_ROOT} || true && \
-    yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} \
+RUN yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses --sdk_root=${ANDROID_SDK_ROOT} && \
+    yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} \
         "platform-tools" \
         "platforms;android-35" \
         "build-tools;35.0.0" \
