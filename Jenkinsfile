@@ -15,6 +15,20 @@ pipeline {
                 }
             }
         }
+        stage('Debug Emulator Container') {
+            steps {
+                script {
+                    // Show status of all containers
+                    sh "docker-compose -f ${COMPOSE_FILE} ps -a"
+                    // Show logs from the emulator container
+                    sh "docker-compose -f ${COMPOSE_FILE} logs --tail=100 android-emulator || true"
+                    // Show Docker system info (for KVM, etc.)
+                    sh "docker info || true"
+                    // Show KVM device presence
+                    sh "ls -l /dev/kvm || true"
+                }
+            }
+        }
         stage('Wait for Emulator & Appium') {
             steps {
                 script {
