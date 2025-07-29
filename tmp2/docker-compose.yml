@@ -2,30 +2,37 @@ version: '3.8'
 
 services:
   android-emulator:
-    container_name: emulator
-    image: cndaqiang/docker-android-emulator:api-33arm64v8a
-    privileged: true
+    container_name: android-emulator
+    build:
+      context: .
+      dockerfile: appium_arm64.dockerfile
     network_mode: host
-    shm_size: 2g
+    privileged: true
+    devices:
+      - /dev/kvm
     environment:
-      - DEVICE=pixel
-      - AUTO_RECORD=false
-      - SKIN=1200x1920
-      - APPIUM=true
-      - VERBOSE=true
-    healthcheck:
-      test: ["CMD", "adb", "shell", "getprop", "sys.boot_completed"]
-      interval: 30s
-      timeout: 10s
-      retries: 10
-      start_period: 300s
+      - ANDROID_SDK_ROOT=/opt/android-sdk
+      - ANDROID_HOME=/opt/android-sdk
+    command: >
+      bash -c "
+        echo 'Starting Android emulator...' &&
+        ${ANDROID_SDK_ROOT}/emulator/emulator -avd android34-arm64 -no-audio -no-window -gpu swiftshader_indirect &&
+        echo 'Emulator started successfully'
+      "
+    stdin_open: true
+    tty: true
 
   appium:
     container_name: appium
-    image: appium/appium
+    build:
+      context: .
+      dockerfile: appium_arm64.dockerfile
     network_mode: host
     depends_on:
-      - android-emulator
+      android-emulator:
+        condition: service_started
+    stdin_open: true
+    tty: true
 
   app-builder:
     container_name: app-builder
@@ -35,7 +42,7 @@ services:
     network_mode: host
     depends_on:
       android-emulator:
-        condition: service_healthy
+        condition: service_started
       appium:
         condition: service_started
     stdin_open: true
@@ -49,7 +56,7 @@ services:
     network_mode: host
     depends_on:
       android-emulator:
-        condition: service_healthy
+        condition: service_started
       appium:
         condition: service_started
     volumes:

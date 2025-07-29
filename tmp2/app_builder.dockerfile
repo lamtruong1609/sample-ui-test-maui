@@ -1,40 +1,56 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0.203 AS builder
 
-# Install required packages
+# Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    unzip wget openjdk-17-jdk \
+    unzip openjdk-17-jdk wget zip \
     && rm -rf /var/lib/apt/lists/*
 
-# Set environment paths for Android SDK
+# Set environment for Android SDK
 ENV ANDROID_SDK_ROOT=/opt/android-sdk
 ENV ANDROID_HOME=$ANDROID_SDK_ROOT
-ENV PATH="$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/cmdline-tools/bin:$ANDROID_SDK_ROOT/platform-tools"
+ENV ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL=60
+ENV PATH="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools:${PATH}"
 
-# Download and install Android command line tools
-RUN mkdir -p $ANDROID_SDK_ROOT/cmdline-tools && \
-    cd $ANDROID_SDK_ROOT/cmdline-tools && \
-    wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip && \
-    unzip tools.zip -d latest && \
-    rm tools.zip
+# Download and setup Android command line tools (correct structure)
+RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    cd ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip && \
+    unzip cmdline-tools.zip -d . && \
+    mv cmdline-tools latest && \
+    rm cmdline-tools.zip
 
-# Accept Android licenses and install SDK packages
-RUN yes | sdkmanager --sdk_root=${ANDROID_SDK_ROOT} --licenses && \
-    sdkmanager --sdk_root=${ANDROID_SDK_ROOT} \
+# Verify sdkmanager is accessible
+RUN ls -la ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin && \
+    ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --version
+
+# Accept licenses and install necessary Android packages
+RUN yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses && \
+    ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager \
         "platform-tools" \
-        "platforms;android-33" \
-        "build-tools;33.0.2" \
+        "platforms;android-34" \
+        "build-tools;34.0.0" \
         "emulator" \
-        "system-images;android-33;google_apis;arm64-v8a"
+        "system-images;android-34;google_apis;arm64-v8a"
 
-# # Install .NET MAUI Android workload
+# Install .NET MAUI Android workload
 RUN dotnet workload install maui-android
 
+# Set working directory
 WORKDIR /home/app
-# # Optional: copy your source code into the image (you can also use bind mounts)
 
-COPY BasicAppiumNunitSample/MauiApp /home/app
-RUN dotnet publish BasicAppiumNunitSample.csproj -f net9.0-android -c Release -o ./publish 
+# Copy your MAUI app source code
+COPY BasicAppiumNunitSample/MauiApp/ /home/app/
 
+# Publish the MAUI Android app
+RUN dotnet publish BasicAppiumNunitSample.csproj \
+    -f net9.0-android \
+    -c Release \
+    -o /home/app/publish \
+    -p:AndroidSupportedAbis=arm64-v8a
 
+# Copy and configure entrypoint script
 COPY entrypoint_app_builder.sh /home/app/entrypoint.sh
+RUN chmod +x /home/app/entrypoint.sh
+
+# Start from entrypoint
 ENTRYPOINT ["/home/app/entrypoint.sh"]
