@@ -3,12 +3,12 @@ version: '3.8'
 services:
   android-emulator:
     container_name: emulator
-    image: budtmo/docker-android:emulator_13.0
+    image: cndaqiang/docker-android-emulator:api-33arm64v8a
+    privileged: true
     network_mode: host
     shm_size: 2g
-    privileged: true
     environment:
-      - DEVICE=Samsung Galaxy S6
+      - DEVICE=pixel
       - AUTO_RECORD=false
       - SKIN=1200x1920
       - APPIUM=true
