@@ -33,46 +33,46 @@ RUN echo "y" | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --license
     (echo "License acceptance failed" && exit 1)
 
 # Install packages one by one to identify which fails
-RUN echo "Installing platform-tools..." && \
-    ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "platform-tools" || \
-    (echo "platform-tools installation failed" && exit 1)
+# RUN echo "Installing platform-tools..." && \
+#     ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "platform-tools" || \
+#     (echo "platform-tools installation failed" && exit 1)
 
-RUN echo "Installing platforms..." && \
-    ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" || \
-    (echo "platforms installation failed" && exit 1)
+# RUN echo "Installing platforms..." && \
+#     ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" || \
+#     (echo "platforms installation failed" && exit 1)
 
-RUN echo "Installing build-tools..." && \
-    ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" || \
-    (echo "build-tools installation failed" && exit 1)
+# RUN echo "Installing build-tools..." && \
+#     ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" || \
+#     (echo "build-tools installation failed" && exit 1)
 
-RUN echo "Installing emulator..." && \
-    ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "emulator" || \
-    (echo "emulator installation failed" && exit 1)
+# RUN echo "Installing emulator..." && \
+#     ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "emulator" || \
+#     (echo "emulator installation failed" && exit 1)
 
-# Try to install system image (this might fail on ARM64)
-RUN echo "Installing system image..." && \
-    ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "system-images;android-33;google_apis;arm64-v8a" || \
-    (echo "system-image installation failed - this is expected on some ARM64 systems" && echo "Continuing without system image...")
+# # Try to install system image (this might fail on ARM64)
+# RUN echo "Installing system image..." && \
+#     ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "system-images;android-33;google_apis;arm64-v8a" || \
+#     (echo "system-image installation failed - this is expected on some ARM64 systems" && echo "Continuing without system image...")
 
-# Install .NET MAUI Android workload
-RUN dotnet workload install maui-android
+# # Install .NET MAUI Android workload
+# RUN dotnet workload install maui-android
 
-# Set working directory
-WORKDIR /home/app
+# # Set working directory
+# WORKDIR /home/app
 
-# Copy your MAUI app source code
-COPY BasicAppiumNunitSample/MauiApp/ /home/app/
+# # Copy your MAUI app source code
+# COPY BasicAppiumNunitSample/MauiApp/ /home/app/
 
-# Publish the MAUI Android app
-RUN dotnet publish BasicAppiumNunitSample.csproj \
-    -f net9.0-android \
-    -c Release \
-    -o /home/app/publish \
-    -p:AndroidSupportedAbis=arm64-v8a
+# # Publish the MAUI Android app
+# RUN dotnet publish BasicAppiumNunitSample.csproj \
+#     -f net9.0-android \
+#     -c Release \
+#     -o /home/app/publish \
+#     -p:AndroidSupportedAbis=arm64-v8a
 
-# Copy and configure entrypoint script
-COPY entrypoint_app_builder.sh /home/app/entrypoint.sh
-RUN chmod +x /home/app/entrypoint.sh
+# # Copy and configure entrypoint script
+# COPY entrypoint_app_builder.sh /home/app/entrypoint.sh
+# RUN chmod +x /home/app/entrypoint.sh
 
-# Start from entrypoint
-ENTRYPOINT ["/home/app/entrypoint.sh"]
+# # Start from entrypoint
+# ENTRYPOINT ["/home/app/entrypoint.sh"]

@@ -30,32 +30,32 @@ RUN echo "Testing network connectivity:" && \
 RUN echo "y" | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses || \
     (echo "License acceptance failed" && exit 1)
 
-# Install packages one by one to identify which fails
-RUN echo "Installing platform-tools..." && \
-    ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "platform-tools" || \
-    (echo "platform-tools installation failed" && exit 1)
+# # Install packages one by one to identify which fails
+# RUN echo "Installing platform-tools..." && \
+#     ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "platform-tools" || \
+#     (echo "platform-tools installation failed" && exit 1)
 
-RUN echo "Installing platforms..." && \
-    ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" || \
-    (echo "platforms installation failed" && exit 1)
+# RUN echo "Installing platforms..." && \
+#     ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" || \
+#     (echo "platforms installation failed" && exit 1)
 
-RUN echo "Installing build-tools..." && \
-    ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" || \
-    (echo "build-tools installation failed" && exit 1)
+# RUN echo "Installing build-tools..." && \
+#     ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" || \
+#     (echo "build-tools installation failed" && exit 1)
 
-RUN echo "Installing emulator..." && \
-    ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "emulator" || \
-    (echo "emulator installation failed" && exit 1)
+# RUN echo "Installing emulator..." && \
+#     ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "emulator" || \
+#     (echo "emulator installation failed" && exit 1)
 
-# Try to install system image (this might fail on ARM64)
-RUN echo "Installing system image..." && \
-    ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "system-images;android-33;google_apis;arm64-v8a" || \
-    (echo "system-image installation failed - this is expected on some ARM64 systems" && echo "Continuing without system image...")
+# # Try to install system image (this might fail on ARM64)
+# RUN echo "Installing system image..." && \
+#     ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "system-images;android-33;google_apis;arm64-v8a" || \
+#     (echo "system-image installation failed - this is expected on some ARM64 systems" && echo "Continuing without system image...")
 
-# Install Appium
-RUN apt-get update && apt-get install -y nodejs npm && \
-    npm install -g appium && \
-    rm -rf /var/lib/apt/lists/*
+# # Install Appium
+# RUN apt-get update && apt-get install -y nodejs npm && \
+#     npm install -g appium && \
+#     rm -rf /var/lib/apt/lists/*
 
-# Start Appium
-CMD ["appium", "--allow-insecure", "chromedriver_autodownload"]
+# # Start Appium
+# CMD ["appium", "--allow-insecure", "chromedriver_autodownload"]
