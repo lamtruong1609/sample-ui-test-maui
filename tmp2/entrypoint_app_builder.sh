@@ -11,7 +11,9 @@ if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
     echo "APK file not found in /home/app/publish/"
     exit 1
 fi
-
+# Ensure emulator is reachable
+echo "Connecting ADB to emulator..."
+adb connect 127.0.0.1:5555
 
 # Wait until the package manager is available
 MAX_RETRIES=60

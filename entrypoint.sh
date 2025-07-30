@@ -32,7 +32,7 @@ while ! adb shell pm list packages | grep -q $PACKAGE_NAME ; do
 done
 
 echo "App is installed. Building the test project..."
-dotnet build UITests.Android/UITests.Android.csproj
+dotnet build UITests.Android/UITests.Android.csproj -c Release
 sleep 2
 
 echo "Starting UI tests..."
