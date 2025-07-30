@@ -12,12 +12,17 @@ fi
 
 echo "✅ Found APK: $APK_PATH"
 
-# Connect to emulator
-echo "🔌 Connecting ADB to emulator..."
-adb connect 127.0.0.1:5555 || {
-    echo "❌ Failed to connect to emulator via ADB."
-    exit 1
-}
+# Connect to emulator if not already connected
+if adb devices | grep -q "emulator-5554[[:space:]]*device"; then
+    echo "✅ Emulator already connected via emulator-5554."
+else
+    echo "🔌 Connecting ADB to emulator..."
+    adb connect 127.0.0.1:5555 || {
+        echo "❌ Failed to connect to emulator via ADB."
+        exit 1
+    }
+fi
+
 
 # Wait for package manager to be available
 echo "⏳ Waiting for package manager..."
