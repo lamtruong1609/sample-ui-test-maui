@@ -1,23 +1,13 @@
 version: '3.8'
 
 services:
-  appium:
-    container_name: appium
-    image: appium/appium
-    network_mode: host
-    depends_on: []
-    stdin_open: true
-    tty: true
-
   app-builder:
     container_name: app-builder
     build:
       context: .
       dockerfile: app_builder.dockerfile
     network_mode: host
-    depends_on:
-      appium:
-        condition: service_started
+    depends_on: []
     volumes:
       - ./output:/home/app/output
     stdin_open: true
@@ -29,9 +19,7 @@ services:
       context: .
       dockerfile: test_runner.dockerfile
     network_mode: host
-    depends_on:
-      appium:
-        condition: service_started
+    depends_on: []
     volumes:
       - ./output:/home/app/output
     environment:
