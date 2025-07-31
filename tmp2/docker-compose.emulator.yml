@@ -18,10 +18,3 @@ services:
       timeout: 10s
       retries: 10
       start_period: 300s 
-  appium:
-    container_name: appium
-    image: appium/appium
-    network_mode: host
-    depends_on: []
-    stdin_open: true
-    tty: true
