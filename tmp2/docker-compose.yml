@@ -1,30 +1,13 @@
 version: '3.8'
 
 services:
-  android-emulator:
-    container_name: emulator
-    build:
-      context: .
-      dockerfile: emulator.dockerfile
-    privileged: true
-    ports:
-      - "5554:5554"
-      - "5555:5555"
-    # network_mode: host
-    shm_size: 2g
-    healthcheck:
-      test: ["CMD", "adb", "shell", "getprop", "sys.boot_completed"]
-      interval: 30s
-      timeout: 10s
-      retries: 10
-      start_period: 300s
-
   appium:
     container_name: appium
     image: appium/appium
     network_mode: host
-    depends_on:
-      - android-emulator
+    depends_on: []
+    stdin_open: true
+    tty: true
 
   app-builder:
     container_name: app-builder
@@ -33,8 +16,6 @@ services:
       dockerfile: app_builder.dockerfile
     network_mode: host
     depends_on:
-      android-emulator:
-        condition: service_healthy
       appium:
         condition: service_started
     volumes:
@@ -49,8 +30,6 @@ services:
       dockerfile: test_runner.dockerfile
     network_mode: host
     depends_on:
-      android-emulator:
-        condition: service_healthy
       appium:
         condition: service_started
     volumes:
