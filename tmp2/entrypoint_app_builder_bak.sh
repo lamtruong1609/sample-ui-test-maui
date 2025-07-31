@@ -1,15 +1,7 @@
 #!/bin/bash
 set -e
 
-# Get the device ID from connected devices
-DEVICE_ID=$(adb devices | grep -E "(emulator|device)" | head -n 1 | cut -f1)
-if [ -z "$DEVICE_ID" ]; then
-    echo "No device found. Available devices:"
-    adb devices
-    exit 1
-fi
-
-echo "Using device: $DEVICE_ID"
+# DEVICE=127.0.0.1:5555
 
 # Path to the APK file (update this path as needed)
 APK_PATH=$(ls /home/app/publish/*-Signed.apk 2>/dev/null | head -n 1)
@@ -20,64 +12,59 @@ if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
     exit 1
 fi
 
+
 # Wait until the package manager is available
-MAX_RETRIES=120  # Increased from 60
+MAX_RETRIES=60
 RETRY=0
-while ! adb -s "$DEVICE_ID" shell pm path android >/dev/null 2>&1; do
+while ! adb shell pm path android >/dev/null 2>&1; do
     RETRY=$((RETRY+1))
     if [ $RETRY -ge $MAX_RETRIES ]; then
         echo "No device connected or package manager unavailable after $MAX_RETRIES attempts."
-        echo "Device status:"
-        adb devices
         exit 2
     fi
     echo "Waiting for package manager to become available... ($RETRY/$MAX_RETRIES)"
-    sleep 10  # Increased from 5
+    sleep 5
 done
 
 # Additional checks to ensure system is fully ready
 echo "Package manager available. Waiting for system to be fully ready..."
 SYSTEM_READY=false
 SYSTEM_RETRY=0
-MAX_SYSTEM_RETRIES=60  # Increased from 30
+MAX_SYSTEM_RETRIES=30
 
 while [ "$SYSTEM_READY" = false ] && [ $SYSTEM_RETRY -lt $MAX_SYSTEM_RETRIES ]; do
     SYSTEM_RETRY=$((SYSTEM_RETRY+1))
     
-    # Check if system is fully booted first
-    BOOT_COMPLETED=$(adb -s "$DEVICE_ID" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
-    if [ "$BOOT_COMPLETED" = "1" ]; then
-        echo "System boot completed."
+    # Check if settings provider is available
+    if adb shell settings list system >/dev/null 2>&1; then
+        echo "Settings provider is available."
         
-        # Check if package installer is ready
-        if adb -s "$DEVICE_ID" shell dumpsys package | grep -q "Packages:"; then
-            echo "Package installer is ready."
+        # Check if system is fully booted
+        BOOT_COMPLETED=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+        if [ "$BOOT_COMPLETED" = "1" ]; then
+            echo "System boot completed."
             
-            # Try settings provider (this might fail on some emulators, so we'll continue anyway)
-            if adb -s "$DEVICE_ID" shell settings list system >/dev/null 2>&1; then
-                echo "Settings provider is available."
+            # Additional check for package installer readiness
+            if adb shell dumpsys package | grep -q "Packages:"; then
+                echo "Package installer is ready."
+                SYSTEM_READY=true
             else
-                echo "Settings provider not available (this is OK for some emulators)."
+                echo "Package installer not ready yet... ($SYSTEM_RETRY/$MAX_SYSTEM_RETRIES)"
             fi
-            
-            SYSTEM_READY=true
         else
-            echo "Package installer not ready yet... ($SYSTEM_RETRY/$MAX_SYSTEM_RETRIES)"
+            echo "System still booting... ($SYSTEM_RETRY/$MAX_SYSTEM_RETRIES)"
         fi
     else
-        echo "System still booting... ($SYSTEM_RETRY/$MAX_SYSTEM_RETRIES)"
+        echo "Settings provider not available yet... ($SYSTEM_RETRY/$MAX_SYSTEM_RETRIES)"
     fi
     
     if [ "$SYSTEM_READY" = false ]; then
-        sleep 15  # Increased from 10
+        sleep 10
     fi
 done
 
 if [ "$SYSTEM_READY" = false ]; then
     echo "System not ready after $MAX_SYSTEM_RETRIES attempts. Exiting."
-    echo "Current device status:"
-    adb -s "$DEVICE_ID" shell getprop sys.boot_completed
-    adb -s "$DEVICE_ID" shell dumpsys package | head -5
     exit 3
 fi
 
@@ -90,7 +77,7 @@ while [ $INSTALL_RETRY -lt $MAX_INSTALL_RETRIES ]; do
     INSTALL_RETRY=$((INSTALL_RETRY+1))
     echo "Installation attempt $INSTALL_RETRY/$MAX_INSTALL_RETRIES"
     
-    if adb -s "$DEVICE_ID" install -r "$APK_PATH"; then
+    if adb install -r "$APK_PATH"; then
         echo "Installation complete."
         break
     else

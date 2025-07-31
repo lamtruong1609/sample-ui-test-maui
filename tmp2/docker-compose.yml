@@ -7,7 +7,10 @@ services:
       context: .
       dockerfile: emulator.dockerfile
     privileged: true
-    network_mode: host
+    ports:
+      - "5554:5554"
+      - "5555:5555"
+    # network_mode: host
     shm_size: 2g
     healthcheck:
       test: ["CMD", "adb", "shell", "getprop", "sys.boot_completed"]
