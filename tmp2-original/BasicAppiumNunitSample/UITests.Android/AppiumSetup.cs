@@ -47,23 +47,15 @@ public class AppiumSetup
 		androidOptions.AddAdditionalAppiumOption(AndroidMobileCapabilityType.AppActivity, $"com.companyname.basicappiumsample.MainActivity");
         // END DEBUG BUILD SETUP
 
-        // Add timeout configurations to prevent ADB execution timeouts
-        androidOptions.AddAdditionalAppiumOption("adbExecTimeout", "60000"); // Increase ADB execution timeout to 60 seconds
-        androidOptions.AddAdditionalAppiumOption("uiautomator2ServerLaunchTimeout", 60000); // Increase UIAutomator2 server launch timeout
-        androidOptions.AddAdditionalAppiumOption("uiautomator2ServerInstallTimeout", 60000); // Increase UIAutomator2 server install timeout
-        // androidOptions.AddAdditionalAppiumOption("androidInstallTimeout", "90000"); // Increase Android install timeout
-        // androidOptions.AddAdditionalAppiumOption("newCommandTimeout", "60"); // Increase new command timeout
-        // androidOptions.AddAdditionalAppiumOption("autoGrantPermissions", "true"); // Auto-grant permissions to avoid dialogs
-        // androidOptions.AddAdditionalAppiumOption("skipServerInstallation", "false"); // Ensure server installation
-        // androidOptions.AddAdditionalAppiumOption("skipDeviceInitialization", "false"); // Ensure device initialization
 
         // Specifying the avd option will boot the emulator for you
         // make sure there is an emulator with the name below
         // If not specified, make sure you have an emulator booted
         //androidOptions.AddAdditionalAppiumOption("avd", "pixel_5_-_api_33");
-		androidOptions.AddAdditionalAppiumOption("udid", "127.0.0.1:5555");
+		// androidOptions.AddAdditionalAppiumOption("udid", "127.0.0.1:5555");
         // Note there are many more options that you can use to influence the app under test according to your needs
-        // driver = new AndroidDriver(androidOptions)
+
+        // driver = new AndroidDriver(androidOptions);
 		driver = new AndroidDriver(new Uri("http://localhost:4723"), androidOptions);
 
 	}
