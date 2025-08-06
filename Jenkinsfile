@@ -25,9 +25,6 @@ pipeline {
                     sh '''
                         chmod +x ${WORKSPACE}/genymotion_ec2_runner.sh
                         
-                        # Update the docker-compose file path in the script
-                        sed -i "s|DOCKER_COMPOSE_FILE=.*|DOCKER_COMPOSE_FILE=\"${DOCKER_COMPOSE_FILE}\"|" ${WORKSPACE}/genymotion_ec2_runner.sh
-                        
                         # Run the script to create EC2 instance
                         ${WORKSPACE}/genymotion_ec2_runner.sh
                     '''
