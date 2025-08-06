@@ -1,86 +1,155 @@
 pipeline {
     agent { label 'amazon-linux' }
-
+    
     environment {
-        OUTPUT_DIR = "tmp2/output"
-        COMPOSE_FILE = "tmp2/docker-compose.yml"
+        // AWS credentials should be configured in Jenkins credentials
+        AWS_DEFAULT_REGION = 'eu-west-2'
+        DOCKER_COMPOSE_FILE = "${WORKSPACE}/tmp2-original/docker-compose.yml"
+        RESULTS_DIR = "${WORKSPACE}/test-results"
     }
-
+    
     stages {
-        stage('Start Services') {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out code from repository...'
+                checkout scm
+            }
+        }
+        
+        stage('Launch Genymotion EC2') {
             steps {
                 script {
-                    echo "🚀 Starting Docker services..."
-                    try {
-                        sh "docker-compose -f ${COMPOSE_FILE} up -d"
-                    } catch (err) {
-                        echo "❌ Failed to start Docker services. Fetching logs..."
-                        sh "docker-compose -f ${COMPOSE_FILE} logs --tail=100"
-                        error("Start Services stage failed: ${err}")
-                    }
+                    echo 'Launching Genymotion EC2 instance...'
+                    
+                    // Make the script executable and run it
+                    sh '''
+                        chmod +x ${WORKSPACE}/genymotion_ec2_runner.sh
+                        
+                        # Update the docker-compose file path in the script
+                        sed -i "s|DOCKER_COMPOSE_FILE=.*|DOCKER_COMPOSE_FILE=\"${DOCKER_COMPOSE_FILE}\"|" ${WORKSPACE}/genymotion_ec2_runner.sh
+                        
+                        # Run the script to create EC2 instance
+                        ${WORKSPACE}/genymotion_ec2_runner.sh
+                    '''
                 }
             }
         }
-
-        stage('Wait for Emulator & Appium') {
-            steps {
-                script {
-                    echo "⏳ Waiting for Emulator & Appium to be ready..."
-                    sh "docker-compose -f ${COMPOSE_FILE} ps -a"
-
-                    def retries = 12
-                    def healthy = false
-
-                    for (int i = 0; i < retries; i++) {
-                        def status = sh(
-                            script: "docker inspect -f '{{.State.Health.Status}}' emulator || echo 'unavailable'",
-                            returnStdout: true
-                        ).trim()
-
-                        echo "➡️ Emulator health status: ${status}"
-                        if (status == "healthy") {
-                            healthy = true
-                            break
-                        }
-                        sleep 30
-                    }
-
-                    if (!healthy) {
-                        echo "❌ Emulator is not healthy after waiting. Fetching logs..."
-                        sh "docker-compose -f ${COMPOSE_FILE} logs --tail=100 android-emulator"
-                        error("Emulator did not become healthy in time.")
-                    }
-                }
-            }
-        }
-
+        
         stage('Run Tests') {
             steps {
                 script {
-                    echo "🧪 Running test-runner..."
-                    try {
-                        sh "docker-compose -f ${COMPOSE_FILE} run --rm test-runner"
-                    } catch (err) {
-                        echo "❌ Test runner failed. Collecting logs..."
-                        sh "docker-compose -f ${COMPOSE_FILE} logs --tail=100 test-runner"
-                        error("Test Runner failed: ${err}")
-                    }
+                    echo 'Running UI tests with docker-compose...'
+                    
+                    // Get the EC2 instance ID from the script output or environment
+                    sh '''
+                        # Create results directory
+                        mkdir -p ${RESULTS_DIR}
+                        
+                        # Run docker-compose for tests
+                        cd ${WORKSPACE}/tmp2-original
+                        docker-compose up -d
+                        
+                        # Wait for tests to complete (adjust timeout as needed)
+                        echo "Waiting for tests to complete..."
+                        timeout 1800 docker-compose logs -f || true
+                        
+                        # Stop containers
+                        docker-compose down
+                    '''
                 }
             }
         }
-
-        stage('Publish Test Results') {
+        
+        stage('Collect Results') {
             steps {
-                echo "📤 Publishing test results..."
-                junit allowEmptyResults: true, testResults: "${OUTPUT_DIR}/*.trx"
+                script {
+                    echo 'Collecting test results...'
+                    
+                    sh '''
+                        # Create results directory if it doesn't exist
+                        mkdir -p ${RESULTS_DIR}
+                        
+                        # Copy test results from docker containers
+                        cd ${WORKSPACE}/tmp2-original
+                        
+                        # Copy test output files from the mounted volume
+                        if [ -d "output" ]; then
+                            echo "Copying test results from output directory..."
+                            cp -r output/* ${RESULTS_DIR}/ || true
+                            echo "Test results copied to ${RESULTS_DIR}"
+                            ls -la ${RESULTS_DIR}/
+                        else
+                            echo "Warning: output directory not found"
+                        fi
+                        
+                        # Copy docker logs
+                        echo "Collecting docker logs..."
+                        docker-compose logs > ${RESULTS_DIR}/docker-logs.txt 2>&1 || true
+                        
+                        # Copy any other relevant test files
+                        echo "Looking for additional test files..."
+                        find . -name "*.xml" -o -name "*.html" -o -name "*.json" -o -name "*.trx" -o -name "*.mp4" | head -20 | xargs -I {} cp {} ${RESULTS_DIR}/ || true
+                        
+                        # Show what was collected
+                        echo "Collected files in ${RESULTS_DIR}:"
+                        ls -la ${RESULTS_DIR}/ || true
+                    '''
+                }
+            }
+        }
+        
+        stage('Cleanup') {
+            steps {
+                script {
+                    echo 'Cleaning up resources...'
+                    
+                    sh '''
+                        # Get the instance ID from the script output or a file
+                        if [ -f "${WORKSPACE}/instance_id.txt" ]; then
+                            INSTANCE_ID=$(cat ${WORKSPACE}/instance_id.txt)
+                            echo "Terminating EC2 instance: $INSTANCE_ID"
+                            aws ec2 terminate-instances --instance-ids $INSTANCE_ID --region eu-west-2 || true
+                        fi
+                        
+                        # Clean up docker resources
+                        cd ${WORKSPACE}/tmp2-original
+                        docker-compose down -v || true
+                        docker system prune -f || true
+                    '''
+                }
             }
         }
     }
-
+    
     post {
         always {
-            echo "🧹 Cleaning up Docker services..."
-            sh "docker-compose -f ${COMPOSE_FILE} down --volumes"
+            script {
+                echo 'Publishing test results...'
+                
+                // Archive test results
+                archiveArtifacts artifacts: 'test-results/**/*', fingerprint: true
+                
+                // Publish test results (if you have JUnit XML reports)
+                sh '''
+                    if [ -d "${RESULTS_DIR}" ]; then
+                        echo "Test results available in: ${RESULTS_DIR}"
+                        ls -la ${RESULTS_DIR}/
+                    fi
+                '''
+            }
+        }
+        
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        
+        failure {
+            echo 'Pipeline failed!'
+        }
+        
+        cleanup {
+            echo 'Cleaning up workspace...'
+            cleanWs()
         }
     }
 }

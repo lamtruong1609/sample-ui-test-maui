@@ -27,6 +27,8 @@ if [ -z "$INSTANCE_ID" ]; then
 fi
 
 echo "Launched instance: $INSTANCE_ID"
+# Save instance ID for Jenkins cleanup
+echo "$INSTANCE_ID" > instance_id.txt
 
 # --- WAIT FOR INSTANCE TO BE RUNNING ---
 echo "Waiting for instance to be running..."
