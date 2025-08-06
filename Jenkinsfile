@@ -46,9 +46,21 @@ pipeline {
                         cd ${WORKSPACE}/tmp2-original
                         docker-compose up -d
                         
-                        # Wait for tests to complete (adjust timeout as needed)
-                        echo "Waiting for tests to complete..."
-                        timeout 300 docker-compose logs -f || true
+                        # Wait for tests to complete (up to 600 seconds or until log message appears)
+                        echo "Waiting for 'UI tests completed' message in test-runner logs (timeout: 600s)..."
+                        end=$((SECONDS+600))
+                        found=0
+                        while [ $SECONDS -lt $end ]; do
+                          if docker-compose logs test-runner | grep -q "UI tests completed"; then
+                            found=1
+                            echo "Detected 'UI tests completed' in logs."
+                            break
+                          fi
+                          sleep 5
+                        done
+                        if [ $found -eq 0 ]; then
+                          echo "Timeout reached (600s) without detecting 'UI tests completed' in logs."
+                        fi
                         
                         # Stop containers
                         docker-compose down
