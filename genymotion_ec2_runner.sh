@@ -50,8 +50,8 @@ fi
 echo "Instance public IP: $PUBLIC_IP"
 
 # --- WAIT FOR GENYMOTION/ADB TO BE READY ---
-echo "Waiting 60 seconds for Genymotion/ADB to be ready..."
-sleep 60  # Adjust as needed for your environment
+echo "Waiting 120 seconds for Genymotion/ADB to be ready..."
+sleep 120  # Adjust as needed for your environment
 
 # --- CHECK EC2 INSTANCE STATUS BEFORE CURL ---
 echo "Checking EC2 instance status before enabling ADB..."

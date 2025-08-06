@@ -4,8 +4,8 @@
 sudo dnf update -y
 
 # Install Java 17, Git, curl, and nano
-sudo dnf install -y java-17-amazon-corretto git curl nano
-
+sudo dnf install -y java-17-amazon-corretto git curl 
+sudo dnf install -y fontconfig
 # Install Docker
 sudo dnf install -y docker
 sudo systemctl enable docker
