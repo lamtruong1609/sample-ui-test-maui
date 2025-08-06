@@ -10,12 +10,6 @@ ENV ANDROID_SDK_ROOT=/opt/android-sdk
 ENV ANDROID_HOME=$ANDROID_SDK_ROOT
 ENV PATH="$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/cmdline-tools/bin:$ANDROID_SDK_ROOT/platform-tools"
 
-# Download and install Android command line tools
-# RUN mkdir -p $ANDROID_SDK_ROOT/cmdline-tools && \
-#     cd $ANDROID_SDK_ROOT/cmdline-tools && \
-#     wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip && \
-#     unzip tools.zip -d latest && \
-#     rm tools.zip
 RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
     cd ${ANDROID_SDK_ROOT}/cmdline-tools && \
     wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip && \
@@ -44,4 +38,5 @@ RUN dotnet publish BasicAppiumNunitSample.csproj -f net9.0-android -c Release -o
 
 
 COPY entrypoint_app_builder.sh /home/app/entrypoint.sh
+RUN chmod +x /home/app/entrypoint.sh
 ENTRYPOINT ["/home/app/entrypoint.sh"]

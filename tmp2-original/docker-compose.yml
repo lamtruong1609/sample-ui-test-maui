@@ -32,12 +32,11 @@ services:
       context: .
       dockerfile: app_builder.dockerfile
     network_mode: host
-    # depends_on:
+    depends_on:
     #   android-emulator:
     #     condition: service_healthy
-    #   appium:
-    #     condition: service_started
-    depends_on: []
+      appium:
+        condition: service_started
     stdin_open: true
     tty: true
 
@@ -47,12 +46,12 @@ services:
       context: .
       dockerfile: test_runner.dockerfile
     network_mode: host
-    # depends_on:
+    depends_on:
     #   android-emulator:
     #     condition: service_healthy
-    #   appium:
-    #     condition: service_started
-    depends_on: []
+      appium:
+        condition: service_started
+    # depends_on: []
     volumes:
       - ./output:/home/app/output
     environment:
