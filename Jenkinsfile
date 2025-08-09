@@ -103,6 +103,15 @@ pipeline {
                         echo "Collected files in ${RESULTS_DIR}:"
                         ls -la ${RESULTS_DIR}/ || true
                     '''
+                    // Upload to S3 with date + build number inside 'results/' folder
+                    sh '''
+                        UPLOAD_DATE=$(date +%Y-%m-%d)
+                        DEST_PATH="results/${UPLOAD_DATE}-build-${BUILD_NUMBER}"
+
+                        echo "Uploading test results to S3 path: ${DEST_PATH}"
+                        aws s3 cp ${RESULTS_DIR} s3://ads-jenkins-s3-staging/${DEST_PATH}/ --recursive
+                        echo "Test results uploaded to s3://ads-jenkins-s3-staging/${DEST_PATH}/"
+                    '''
                 }
             }
         }
